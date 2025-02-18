@@ -1,14 +1,17 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime, time
+
+from sqlalchemy import Time
 
 
 class SScheduleAdd(BaseModel):
-    station_uid: str
-    direction_uid: str
+    station: str
+    direction: str
     time: time
 
 
 class SScheduleCreate(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     station_id: int
     direction_id: int
     time: time
@@ -17,21 +20,27 @@ class SScheduleCreate(BaseModel):
 class SSchedule(SScheduleCreate):
     uid: int
 
+class SScheduleResponse(SScheduleAdd):
+    uid: int
+
 
 class SScheduleUid(BaseModel):
     uid: int
 
 
 class SListSchedule(BaseModel):
-    schedules: list[SSchedule]
+    schedules: list[SScheduleResponse]
 
 
 class SStation(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     uid: int
     name: str
 
 
+
 class SDirection(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     uid: int
     direction: str
 

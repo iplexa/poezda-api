@@ -4,21 +4,35 @@ from fastapi import HTTPException
 from sqlalchemy import select
 
 from database import new_session, ScheduleOrm, StationOrm, DirectionOrm
-from schemas import SSchedule, SScheduleAdd, SStation, SDirection, SScheduleCreate
+from schemas import SSchedule, SScheduleAdd, SStation, SDirection, SScheduleCreate, SScheduleResponse
 
 
 class ScheduleRepository:
     @classmethod
-    async def get_schedules(cls) -> list[SSchedule]:
+    async def get_schedules(cls) -> list[SScheduleResponse]:
         async with new_session() as session:
-            query = select(ScheduleOrm)
+            query = (
+                select(
+                    ScheduleOrm.uid,
+                    StationOrm.name,
+                    DirectionOrm.direction,
+                    ScheduleOrm.time
+                )
+                .outerjoin(StationOrm, ScheduleOrm.station_id == StationOrm.uid)
+                .outerjoin(DirectionOrm, ScheduleOrm.direction_id == DirectionOrm.uid)
+            )
             result = await session.execute(query)
-            schedule_models = result.scalars().all()
-            schedule_schemas = [
-                SSchedule.model_validate(schedule_model)
-                for schedule_model in schedule_models
+            schedule_models = result.all()
+            # print(schedule_models)
+            schedule_info = [
+                SScheduleResponse(uid=uid, station=station, direction=direction, time=time)
+                for uid, station, direction, time in schedule_models
             ]
-            return schedule_schemas
+            # schedule_schemas = [
+            #     SScheduleResponse.model_validate(schedule_model)
+            #     for schedule_model in schedule_models
+            # ]
+            return schedule_info
 
     @classmethod
     async def create_schedule(cls, data: SScheduleCreate) -> int:
@@ -31,7 +45,7 @@ class ScheduleRepository:
             return new_schedule.uid
 
     @classmethod
-    async def put_schedule(cls, uid: int, data: SScheduleAdd) -> None:
+    async def put_schedule(cls, uid: int, data: SScheduleCreate) -> None:
         async with new_session() as session:
             query = select(ScheduleOrm).where(ScheduleOrm.uid == uid)
             result = await session.execute(query)
@@ -49,12 +63,20 @@ class ScheduleRepository:
 
             return
 
+    @classmethod
+    async def delete_schedule(cls, uid: int) -> None:
+        async with new_session() as session:
+            query = select(ScheduleOrm).where(ScheduleOrm.uid == uid)
+            result = await session.execute(query)
+            await session.delete(result)
+            await session.commit()
+            return
 
 class StationRepository:
     @classmethod
     async def get_stations(cls) -> List[SStation]:
         async with new_session() as session:
-            query = select(SStation)
+            query = select(StationOrm)
             result = await session.execute(query)
             stations_models = result.scalars().all()
             station_schemas = [
@@ -66,7 +88,7 @@ class StationRepository:
     @classmethod
     async def get_station_by_id(cls, uid: int) -> SStation:
         async with new_session() as session:
-            query = select(SStation).where(StationOrm.uid == uid)
+            query = select(StationOrm).where(StationOrm.uid == uid)
             result = await session.execute(query)
             stations_model = result.scalars().first()
             if stations_model is None:
@@ -77,12 +99,12 @@ class StationRepository:
     @classmethod
     async def get_station_by_name(cls, name: str) -> SStation:
         async with new_session() as session:
-            query = select(SStation).where(StationOrm.name == name)
+            query = select(StationOrm).where(StationOrm.name == name)
             result = await session.execute(query)
             stations_model = result.scalars().first()
             if stations_model is None:
                 raise HTTPException(status_code=404, detail="No such station")
-            station_schema = SStation.model_validate(stations_model)
+            station_schema = SStation.from_orm(stations_model)
             return station_schema
 
 
@@ -90,7 +112,7 @@ class DirectionRepository:
     @classmethod
     async def get_directions(cls, uid: int) -> List[SDirection]:
         async with new_session() as session:
-            query = select(SStation).where(DirectionOrm.uid == uid)
+            query = select(DirectionOrm).where(DirectionOrm.uid == uid)
             result = await session.execute(query)
             directions_models = result.scalars().all()
             directions_schemas = [
@@ -102,7 +124,7 @@ class DirectionRepository:
     @classmethod
     async def get_direction_by_id(cls, uid: int) -> SDirection:
         async with new_session() as session:
-            query = select(SDirection).where(DirectionOrm.uid == uid)
+            query = select(DirectionOrm).where(DirectionOrm.uid == uid)
             result = await session.execute(query)
             directions_model = result.scalars().first()
             if directions_model is None:
@@ -113,7 +135,7 @@ class DirectionRepository:
     @classmethod
     async def get_direction_by_name(cls, direction: str) -> SDirection:
         async with new_session() as session:
-            query = select(SDirection).where(DirectionOrm.direction == direction)
+            query = select(DirectionOrm).where(DirectionOrm.direction == direction)
             result = await session.execute(query)
             directions_model = result.scalars().first()
             if directions_model is None:

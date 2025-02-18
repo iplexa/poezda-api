@@ -1,5 +1,7 @@
+import time
 from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Response, Request
+from sqlalchemy import Time
 
 from repository import ScheduleRepository, StationRepository, DirectionRepository
 from schemas import (
@@ -29,7 +31,7 @@ async def add_schedule(schedule: Annotated[SScheduleAdd, Depends()]) -> SSchedul
         direction_id=direction_id,
         time=schedule.time,
     )
-    schedule_uid = await ScheduleRepository.create_schedule(schedule)
+    schedule_uid = await ScheduleRepository.create_schedule(db_add_schedule)
     return {"uid": schedule_uid}
 
 
@@ -42,7 +44,12 @@ async def get_schedule() -> SListSchedule:
 @router.put("/update")
 async def update_schedule(
     uid: Annotated[SScheduleUid, Depends()],
-    schedule: Annotated[SScheduleAdd, Depends()],
+    schedule: Annotated[SScheduleCreate, Depends()],
 ) -> None:
     await ScheduleRepository.put_schedule(uid.uid, schedule)
+    return
+
+@router.delete("/delete")
+async def delete_schedule(uid: Annotated[SScheduleUid, Depends()]) -> None:
+    await ScheduleRepository.delete_schedule(uid.uid)
     return
