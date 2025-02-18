@@ -20,6 +20,7 @@ class SScheduleCreate(BaseModel):
 class SSchedule(SScheduleCreate):
     uid: int
 
+
 class SScheduleResponse(SScheduleAdd):
     uid: int
 
@@ -38,11 +39,18 @@ class SStation(BaseModel):
     name: str
 
 
+class SListStation(BaseModel):
+    stations: list[SStation]
+
 
 class SDirection(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     uid: int
     direction: str
+
+
+class SListDirection(BaseModel):
+    directions: list[SDirection]
 
 
 class SUserAdd(BaseModel):

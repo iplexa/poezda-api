@@ -1,7 +1,8 @@
+from http import HTTPStatus
 from typing import List
 
 from fastapi import HTTPException
-from sqlalchemy import select
+from sqlalchemy import select, update, delete
 
 from database import new_session, ScheduleOrm, StationOrm, DirectionOrm
 from schemas import SSchedule, SScheduleAdd, SStation, SDirection, SScheduleCreate, SScheduleResponse
@@ -54,10 +55,8 @@ class ScheduleRepository:
                 raise HTTPException(status_code=404, detail="No such schedule")
 
             schedule_dict = data.model_dump()
-            new_schedule = ScheduleOrm(**schedule_dict)
-
-            await session.delete(result)
-            await session.add(new_schedule)
+            query = update(ScheduleOrm).where(ScheduleOrm.uid == uid).values(**schedule_dict)
+            result = await session.execute(query)
             await session.flush()
             await session.commit()
 
@@ -66,11 +65,11 @@ class ScheduleRepository:
     @classmethod
     async def delete_schedule(cls, uid: int) -> None:
         async with new_session() as session:
-            query = select(ScheduleOrm).where(ScheduleOrm.uid == uid)
-            result = await session.execute(query)
-            await session.delete(result)
+            query = delete(ScheduleOrm).where(ScheduleOrm.uid == uid)
+            await session.execute(query)
             await session.commit()
             return
+
 
 class StationRepository:
     @classmethod
@@ -110,9 +109,9 @@ class StationRepository:
 
 class DirectionRepository:
     @classmethod
-    async def get_directions(cls, uid: int) -> List[SDirection]:
+    async def get_directions(cls) -> List[SDirection]:
         async with new_session() as session:
-            query = select(DirectionOrm).where(DirectionOrm.uid == uid)
+            query = select(DirectionOrm)
             result = await session.execute(query)
             directions_models = result.scalars().all()
             directions_schemas = [
@@ -142,7 +141,6 @@ class DirectionRepository:
                 raise HTTPException(status_code=404, detail="No such direction")
             direction_schema = SDirection.model_validate(directions_model)
             return direction_schema
-
 
 # class UserRepository:
 #     @classmethod

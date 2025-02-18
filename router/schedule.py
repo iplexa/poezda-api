@@ -16,8 +16,7 @@ from schemas import (
 router = APIRouter(prefix="/api/schedule", tags=["Расписание"])
 
 
-@router.post("/add")
-async def add_schedule(schedule: Annotated[SScheduleAdd, Depends()]) -> SScheduleUid:
+async def check_schedule(schedule: Annotated[SScheduleAdd, Depends()]) -> SScheduleCreate:
     station: SStation = await StationRepository.get_station_by_name(schedule.station)
     station_id = station.uid
     if not station_id:
@@ -26,12 +25,18 @@ async def add_schedule(schedule: Annotated[SScheduleAdd, Depends()]) -> SSchedul
     direction_id = direction.uid
     if not direction_id:
         raise HTTPException(404, "No such direction")
-    db_add_schedule = SScheduleCreate(
+    return SScheduleCreate(
         station_id=station_id,
         direction_id=direction_id,
         time=schedule.time,
     )
-    schedule_uid = await ScheduleRepository.create_schedule(db_add_schedule)
+
+
+@router.post("/add")
+async def add_schedule(
+    schedule: Annotated[SScheduleCreate, Depends(check_schedule)]
+) -> SScheduleUid:
+    schedule_uid = await ScheduleRepository.create_schedule(schedule)
     return {"uid": schedule_uid}
 
 
@@ -44,10 +49,11 @@ async def get_schedule() -> SListSchedule:
 @router.put("/update")
 async def update_schedule(
     uid: Annotated[SScheduleUid, Depends()],
-    schedule: Annotated[SScheduleCreate, Depends()],
+    schedule: Annotated[SScheduleCreate, Depends(check_schedule)],
 ) -> None:
     await ScheduleRepository.put_schedule(uid.uid, schedule)
     return
+
 
 @router.delete("/delete")
 async def delete_schedule(uid: Annotated[SScheduleUid, Depends()]) -> None:

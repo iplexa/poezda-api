@@ -4,7 +4,7 @@ import uvicorn
 
 from database import create_tables, delete_tables
 
-from router import schedule_router
+from router import schedule_router, station_router, direction_router
 
 
 @asynccontextmanager
@@ -18,6 +18,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 app.include_router(schedule_router)
+app.include_router(station_router)
+app.include_router(direction_router)
 
 if __name__ == "__main__":
-    uvicorn.run('main:app', host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run('main:app', port=8000, reload=True)
