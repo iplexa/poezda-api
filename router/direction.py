@@ -4,7 +4,7 @@ from fastapi import APIRouter
 from repository import DirectionRepository
 from schemas import SListDirection
 
-router = APIRouter(prefix="/api/direction", tags=["Направления"])
+router = APIRouter(prefix="/direction", tags=["Направления"])
 
 
 @router.get('')

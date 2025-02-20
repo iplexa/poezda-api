@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response, Request
 from repository import StationRepository
 from schemas import SSchedule, SScheduleAdd, SScheduleUid, SListSchedule, SListStation
 
-router = APIRouter(prefix="/api/station", tags=["Станции"])
+router = APIRouter(prefix="/station", tags=["Станции"])
 
 @router.get('')
 async def get_stations() -> SListStation:

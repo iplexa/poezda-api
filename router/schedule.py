@@ -13,7 +13,7 @@ from schemas import (
     SStation,
 )
 
-router = APIRouter(prefix="/api/schedule", tags=["Расписание"])
+router = APIRouter(prefix="/schedule", tags=["Расписание"])
 
 
 async def check_schedule(schedule: Annotated[SScheduleAdd, Depends()]) -> SScheduleCreate:
