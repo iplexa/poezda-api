@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        body {
+            background: linear-gradient(-45deg, #f5f7fa, #c3cfe2, #f5f7fa, #c3cfe2);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: #333;
+            font-family: 'Arial', sans-serif;
+        }
+
+        @keyframes gradientBG {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            background: rgba(255, 255, 255, 0.9);
+            border-bottom: none;
+        }
+
+        .table-responsive {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .log-container {
+            max-height: 400px;
+            overflow-y: auto;
+            background-color: rgba(0, 0, 0, 0.05);
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            color: #333;
+        }
+
+        .btn-primary {
+            background-color: #6c757d;
+            border: none;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: #5a6268;
+        }
+
+        .btn-outline-primary {
+            color: #6c757d;
+            border-color: #6c757d;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-primary:hover {
+            background-color: #6c757d;
+            color: #fff;
+        }
+
+        .btn-outline-success {
+            color: #28a745;
+            border-color: #28a745;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-success:hover {
+            background-color: #28a745;
+            color: #fff;
+        }
+
+        .btn-outline-warning {
+            color: #ffc107;
+            border-color: #ffc107;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-warning:hover {
+            background-color: #ffc107;
+            color: #000;
+        }
+
+        .modal-content {
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            color: #333;
+        }
+
+        .modal-header {
+            border-bottom: none;
+        }
+
+        .modal-footer {
+            border-top: none;
+        }
+
+        .form-control {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid #ddd;
+            color: #333;
+        }
+
+        .form-control:focus {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid #bbb;
+            color: #333;
+            box-shadow: none;
+        }
+
+        .form-label {
+            color: #333;
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        /* Адаптивные стили для карточек */
+        @media (max-width: 768px) {
+            .card {
+                margin-bottom: 15px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-light" data-session-check="true">
+<div class="container mt-4 fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="display-6">Поезда | Меню адмистратора</h1>
+        <button class="btn btn-primary" onclick="location.reload()">
+            <i class="bi bi-arrow-clockwise"></i> Обновить
+        </button>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-6 col-md-12">
+            <div class="card fade-in">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Последние запросы</h5>
+                </div>
+                <div class="card-body table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                        <tr>
+                            <th>Время</th>
+                            <th>IP адрес</th>
+                            <th>Метод</th>
+                            <th>Путь</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for request in requests %}
+                        <tr>
+                            <td>{{ request.timestamp }}</td>
+                            <td>{{ request.ip }}</td>
+                            <td>{{ request.method }}</td>
+                            <td>{{ request.path }}</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 col-md-12">
+            <div class="card fade-in">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Логи</h5>
+                </div>
+                <div class="card-body">
+                    <div class="log-container">
+                        <pre class="mb-0">{{ logs }}</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card fade-in">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">База данных</h5>
+                </div>
+                <div class="card-body table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                        <tr>
+                            <th>Название таблицы</th>
+                            <th>Действия</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for table in tables %}
+                        <tr>
+                            <td>{{ table.name }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
+                                        data-bs-target="#viewModal{{ loop.index }}">
+                                    <i class="bi bi-eye"></i> Вывод
+                                </button>
+                                <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal"
+                                        data-bs-target="#createModal{{ loop.index }}">
+                                    <i class="bi bi-plus"></i> Создать
+                                </button>
+                                <button class="btn btn-sm btn-outline-warning" data-bs-toggle="modal"
+                                        data-bs-target="#editModal{{ loop.index }}">
+                                    <i class="bi bi-pencil"></i> Изменить
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card mb-4 fade-in">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Добавить расписание</h5>
+        </div>
+        <div class="card-body">
+            <form id="addScheduleForm">
+                <div class="mb-3">
+                    <label for="scheduleData" class="form-label">Введите расписание</label>
+                    <textarea class="form-control" id="scheduleData" name="scheduleData" rows="5" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Добавить</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Модальные окна (остаются без изменений) -->
+{% for table in tables %}
+<div class="modal fade" id="viewModal{{ loop.index }}" tabindex="-1" aria-labelledby="viewModalLabel{{ loop.index }}"
+     aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewModalLabel{{ loop.index }}">Посмотреть данные: {{ table.name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead id="tableHeader{{ loop.index }}">
+                        <!-- Заголовки будут добавлены через JavaScript -->
+                        </thead>
+                        <tbody id="tableContent{{ loop.index }}">
+                        <!-- Содержимое таблицы будет загружено сюда -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Модальное окно для редактирования таблицы -->
+{% for table in tables %}
+<div class="modal fade" id="editModal{{ loop.index }}" tabindex="-1" aria-labelledby="editModalLabel{{ loop.index }}"
+     aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editModalLabel{{ loop.index }}">Изменить данные: {{ table.name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editForm{{ loop.index }}">
+                    <div class="mb-3">
+                        <label for="selectRecord" class="form-label">Выбрать запись</label>
+                        <select class="form-select" id="selectRecord" name="primaryKey" required>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                <button type="submit" form="editForm{{ loop.index }}" class="btn btn-primary">Сохранить изменения
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Модальное окно для создания записи -->
+{% for table in tables %}
+<div class="modal fade" id="createModal{{ loop.index }}" tabindex="-1"
+     aria-labelledby="createModalLabel{{ loop.index }}" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createModalLabel{{ loop.index }}">Создать запись в: {{ table.name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createForm{{ loop.index }}">
+                    <!-- Форма будет заполнена через JavaScript -->
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                <button type="submit" form="createForm{{ loop.index }}" class="btn btn-primary">Создать</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+
+    setInterval(async () => {
+        try {
+            const response = await fetch('/admin/check-session');
+            if (!response.ok) {
+                window.location.href = '/admin/login';
+            }
+        } catch (error) {
+            console.error('Session check failed:', error);
+        }
+    }, 300000);
+
+
+    async function checkResponse(response) {
+        if (response.status === 401) {
+            window.location.href = '/admin/login';
+            return false;
+        }
+        return true;
+    }
+
+
+    const originalFetch = window.fetch;
+    window.fetch = async function (...args) {
+        const response = await originalFetch(...args);
+        await checkResponse(response);
+        return response;
+    };
+
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const viewButtons = document.querySelectorAll('[data-bs-target^="#viewModal"]');
+        viewButtons.forEach(button => {
+            button.addEventListener('click', async function () {
+                const tableName = this.closest('tr').querySelector('td').innerText;
+                const modalId = this.getAttribute('data-bs-target').replace('#', '');
+                const modalHeader = document.querySelector(`#${modalId} .modal-body thead`);
+                const modalBody = document.querySelector(`#${modalId} .modal-body tbody`);
+
+                try {
+                    const response = await fetch(`/admin/tables/${tableName}`);
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch table data');
+                    }
+                    const data = await response.json();
+
+                    console.log("Fetched data:", data);
+
+
+                    modalHeader.innerHTML = '';
+                    modalBody.innerHTML = '';
+
+
+                    const headerRow = document.createElement('tr');
+                    data.columns.forEach(column => {
+                        const th = document.createElement('th');
+                        th.textContent = column;
+                        headerRow.appendChild(th);
+                    });
+                    modalHeader.appendChild(headerRow);
+
+
+                    data.rows.forEach(row => {
+                        const tr = document.createElement('tr');
+                        data.columns.forEach(column => {
+                            const td = document.createElement('td');
+                            td.textContent = row[column];  // Используем column как ключ
+                            tr.appendChild(td);
+                        });
+                        modalBody.appendChild(tr);
+                    });
+                } catch (error) {
+                    console.error('Error loading table data:', error);
+                    modalBody.innerHTML = '<tr><td colspan="2">Error loading table data</td></tr>';
+                }
+            });
+        });
+
+
+        const createButtons = document.querySelectorAll('[data-bs-target^="#createModal"]');
+        createButtons.forEach(button => {
+            button.addEventListener('click', async function () {
+                const tableName = this.closest('tr').querySelector('td').innerText;
+                const modalId = this.getAttribute('data-bs-target').replace('#', '');
+                const modalForm = document.querySelector(`#${modalId} .modal-body form`);
+
+                try {
+                    const response = await fetch(`/admin/tables/${tableName}`);
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch table data');
+                    }
+                    const data = await response.json();
+
+                    modalForm.innerHTML = '';
+
+                    data.columns.forEach(column => {
+                        if (column !== "uid") {
+                            const div = document.createElement('div');
+                            div.classList.add('mb-3');
+                            const label = document.createElement('label');
+                            label.textContent = column;
+                            label.classList.add('form-label');
+                            const input = document.createElement('input');
+                            input.type = 'text';
+                            input.name = column;
+                            input.classList.add('form-control');
+                            div.appendChild(label);
+                            div.appendChild(input);
+                            modalForm.appendChild(div);
+                        }
+                    });
+
+                    modalForm.addEventListener('submit', async function (event) {
+                        event.preventDefault();
+                        const formData = new FormData(modalForm);
+                        const data = Object.fromEntries(formData.entries());
+
+                        try {
+                            const response = await fetch(`/admin/tables/${tableName}/create`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify(data),
+                            });
+                            if (!response.ok) {
+                                throw new Error('Failed to create record');
+                            }
+                            alert('Record created successfully!');
+                            location.reload();
+                        } catch (error) {
+                            console.error('Error creating record:', error);
+                            alert('Failed to create record');
+                        }
+                    });
+                } catch (error) {
+                    console.error('Error loading table data for creation:', error);
+                    modalForm.innerHTML = '<p>Error loading table data</p>';
+                }
+            });
+        });
+
+        const editButtons = document.querySelectorAll('[data-bs-target^="#editModal"]');
+        editButtons.forEach(button => {
+            button.addEventListener('click', async function () {
+                const tableName = this.closest('tr').querySelector('td').innerText;
+                const modalId = this.getAttribute('data-bs-target').replace('#', '');
+                const modalForm = document.querySelector(`#${modalId} .modal-body form`);
+
+                try {
+                    const response = await fetch(`/admin/tables/${tableName}`);
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch table data');
+                    }
+                    const data = await response.json();
+
+
+                    modalForm.innerHTML = '';
+
+
+                    const selectDiv = document.createElement('div');
+                    selectDiv.classList.add('mb-3');
+                    const selectLabel = document.createElement('label');
+                    selectLabel.textContent = 'Выберите запись';
+                    selectLabel.classList.add('form-label');
+                    const select = document.createElement('select');
+                    select.classList.add('form-select');
+                    select.name = 'uid';
+                    select.required = true;
+
+
+                    data.rows.forEach(row => {
+                        const option = document.createElement('option');
+                        option.value = row[data.columns[0]];
+                        option.textContent = Object.values(row).join(' - ');
+                        select.appendChild(option);
+                    });
+
+                    selectDiv.appendChild(selectLabel);
+                    selectDiv.appendChild(select);
+                    modalForm.appendChild(selectDiv);
+
+
+                    data.columns.forEach(column => {
+                        if (column !== data.columns[0]) {
+                            const div = document.createElement('div');
+                            div.classList.add('mb-3');
+                            const label = document.createElement('label');
+                            label.textContent = column;
+                            label.classList.add('form-label');
+                            const input = document.createElement('input');
+                            input.type = 'text';
+                            input.name = column;
+                            input.classList.add('form-control');
+                            div.appendChild(label);
+                            div.appendChild(input);
+                            modalForm.appendChild(div);
+                        }
+                    });
+
+
+                    modalForm.addEventListener('submit', async function (event) {
+                        event.preventDefault();
+                        const formData = new FormData(modalForm);
+                        const data = Object.fromEntries(formData.entries());
+
+                        try {
+                            const response = await fetch(`/admin/tables/${tableName}/edit`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify(data),
+                            });
+                            if (!response.ok) {
+                                throw new Error('Failed to save changes');
+                            }
+                            alert('Changes saved successfully!');
+                            location.reload();
+                        } catch (error) {
+                            console.error('Error saving changes:', error);
+                            alert('Failed to save changes');
+                        }
+                    });
+                } catch (error) {
+                    console.error('Error loading table data for editing:', error);
+                    modalForm.innerHTML = '<p>Error loading table data</p>';
+                }
+            });
+        });
+        document.addEventListener('DOMContentLoaded', function () {
+            const addScheduleForm = document.getElementById('addScheduleForm');
+            addScheduleForm.addEventListener('submit', async function (event) {
+                event.preventDefault();
+                const scheduleData = document.getElementById('scheduleData').value;
+
+                try {
+                    const response = await fetch('/admin/add-schedule', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({schedule_data: scheduleData}),
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Failed to add schedule');
+                    }
+
+                    alert('Расписание успешно добавлено!');
+                    location.reload();
+                } catch (error) {
+                    console.error('Error adding schedule:', error);
+                    alert('Ошибка при добавлении расписания');
+                }
+            });
+        });
+    });
+</script>
+</body>
+</html>
