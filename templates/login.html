@@ -48,7 +48,7 @@
         const password = document.getElementById('password').value;
 
         try {
-            const response = await fetch('api/admin/login', {
+            const response = await fetch('/api/admin/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -57,7 +57,7 @@
             });
 
             if (response.ok) {
-                window.location.href = 'api/admin';
+                window.location.href = '/api/admin';
             } else {
                 alert('Incorrect password');
             }
