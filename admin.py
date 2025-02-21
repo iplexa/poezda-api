@@ -91,7 +91,7 @@ async def admin_page(
         db: AsyncSession = Depends(get_db)
 ):
     if not await verify_password(request):
-        return RedirectResponse(url="/admin/login")
+        return RedirectResponse(url="/api/admin/login")
 
     try:
         with open("app.log", "r") as log_file:
