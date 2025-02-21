@@ -50,7 +50,7 @@ from fastapi import Body
 async def login(request: Request, password: str = Body(..., embed=True)):
     if password == ADMIN_PASSWORD:
         request.session["admin_auth"] = hashlib.sha256(password.encode()).hexdigest()
-        return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)
+        return RedirectResponse(url="/api/admin", status_code=status.HTTP_303_SEE_OTHER)
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Incorrect password"
