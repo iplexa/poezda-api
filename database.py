@@ -8,8 +8,17 @@ engine = create_async_engine(
 
 new_session = async_sessionmaker(engine, expire_on_commit=False)
 
+async def get_db():
+    """Database session generator"""
+    async with new_session() as session:
+        try:
+            yield session
+        finally:
+            await session.close()
+
 
 class Model(DeclarativeBase):
+
     pass
 
 

@@ -2,7 +2,8 @@ from http import HTTPStatus
 from typing import List
 
 from fastapi import HTTPException
-from sqlalchemy import select, update, delete
+from sqlalchemy import select, update, delete, text, inspect
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import new_session, ScheduleOrm, StationOrm, DirectionOrm
 from schemas import SSchedule, SScheduleAdd, SStation, SDirection, SScheduleCreate, SScheduleResponse
@@ -142,6 +143,108 @@ class DirectionRepository:
             direction_schema = SDirection.model_validate(directions_model)
             return direction_schema
 
+
+class TableRepository:
+    @classmethod
+    async def get_table_data(cls, table_name: str, db: AsyncSession) -> dict:
+        """Получить данные из таблицы"""
+        try:
+            result = await db.execute(text(f"SELECT * FROM {table_name}"))
+            columns = list(result.keys())
+            rows = result.fetchall()
+            serialized_rows = [dict(zip(columns, row)) for row in rows]
+            return {"table": table_name, "columns": columns, "rows": serialized_rows}
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
+
+    @classmethod
+    async def update_table_row(cls, table_name: str, data: dict, db: AsyncSession) -> dict:
+        """Обновить строку в таблице"""
+        try:
+            # Используем run_sync для синхронной инспекции
+            def sync_inspect(conn):
+                inspector = inspect(conn)
+                return inspector.get_pk_constraint(table_name)["constrained_columns"]
+
+            # Получаем синхронное соединение и выполняем инспекцию
+            connection = await db.connection()
+            primary_keys = await connection.run_sync(sync_inspect)
+
+            if not primary_keys:
+                raise HTTPException(status_code=400, detail="Table has no primary key")
+
+            primary_key = primary_keys[0]
+
+            if primary_key not in data:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Primary key '{primary_key}' is required for update"
+                )
+
+            # Получаем значение первичного ключа и преобразуем его в целое число
+            primary_key_value = int(data[primary_key])
+
+            # Убираем primary_key из данных, чтобы он не обновлялся
+            del data[primary_key]
+
+            # Формируем запрос на обновление
+            query = text(f"""
+                UPDATE {table_name}
+                SET {', '.join([f"{k} = :{k}" for k in data])}
+                WHERE {primary_key} = :primary_key_value
+            """)
+
+            # Добавляем primary_key_value в параметры запроса
+            data["primary_key_value"] = primary_key_value
+
+            await db.execute(query, data)
+            await db.commit()
+
+            return {"status": "success"}
+        except Exception as e:
+            await db.rollback()
+            raise HTTPException(status_code=400, detail=str(e))
+
+    @classmethod
+    async def create_table_row(cls, table_name: str, data: dict, db: AsyncSession) -> dict:
+        """Создать новую запись в таблице"""
+        try:
+            # Используем run_sync для синхронной инспекции
+            def sync_inspect(conn):
+                inspector = inspect(conn)
+                return inspector.get_columns(table_name)
+
+            # Получаем синхронное соединение и выполняем инспекцию
+            connection = await db.connection()
+            columns = await connection.run_sync(sync_inspect)
+            column_names = [col["name"] for col in columns]
+
+            # Убираем UID из данных, если он есть
+            if "uid" in data:
+                del data["uid"]
+
+            # Фильтруем column_names, чтобы исключить uid, если он автоинкрементный
+            column_names = [col for col in column_names if col != "uid"]
+
+            # Проверяем, что все обязательные поля присутствуют, кроме UID
+            for column in columns:
+                if not column["nullable"] and column["name"] not in data and column["name"] != "uid":
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Field '{column['name']}' is required"
+                    )
+
+            # Создаем запрос на вставку
+            query = text(
+                f"INSERT INTO {table_name} ({', '.join(column_names)}) VALUES ({', '.join([':' + col for col in column_names])})"
+            )
+            await db.execute(query, data)
+            await db.commit()
+
+            return {"status": "success"}
+        except Exception as e:
+            await db.rollback()
+            raise HTTPException(status_code=400, detail=str(e))
 # class UserRepository:
 #     @classmethod
 #     async def add_user(cls, data: SUserAdd) -> int:
